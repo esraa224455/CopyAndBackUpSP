@@ -1,5 +1,10 @@
 ﻿ Clear-Host
+#Set Parameters
+$SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
+
+$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/NewCopyList"
 #Function to copy list items from one list to another
+
 Function Copy-SPOListItems()
 {
     param
@@ -15,23 +20,27 @@ Function Copy-SPOListItems()
         $SourceLists = Get-PnPList -Connection $SourceConn | Where { $_.BaseType -eq "GenericList" -and $_.Hidden -eq $False }
         $DestinationConn = Connect-PnPOnline -Url $DestinationSiteURL -Interactive -ReturnConnection
         $DestinationLists = Get-PnPList -Connection $DestinationConn
+        
             ForEach ($SourceList in $SourceLists) {
             $ListName = $SourceList.Title 
-            if($ListName -eq "SuperStoreUS-2015"){
-            #Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
+            if($ListName -eq "العواصم"){
+            $TemplateFile = "$PSScriptRoot\Temp\Template$ListName.xml"
+            Get-PnPSiteTemplate -Out $TemplateFile -ListsToExtract $ListName -Handlers Lists -Connection $SourceConn
+          
+            If (($DestinationLists.Title -contains $SourceList.Title)) {
+                Remove-PnPList -Identity $ListName -Force -Connection $DestinationConn
+                Write-host "Previous List '$($ListName)'removed successfully!" -f Green
+            }       
+ 
+            #Apply the Template
+            Invoke-PnPSiteTemplate -Path $TemplateFile -Connection $DestinationConn
+            Write-Host $TemplateFile
+            
             $SourceListItems = Get-PnPListItem -List $ListName -Connection $SourceConn
             $Batch = New-PnPBatch -Connection $DestinationConn
             $SourceListItemsCount= $SourceListItems.count
             Write-host $ListName "Total Number of Items Found:"$SourceListItemsCount     
-            If (($DestinationLists.Title -contains $ListName)) {
-                #Copy column value from Source to Destination
-                    Remove-PnPList -Identity $ListName -Force -Connection $DestinationConn
-                    write-host "Removed"
-                    Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
-                    }
-                   else{
-                   Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
-                   }
+   
             #Get fields to Update from the Source List - Skip Read only, hidden fields, content type and attachments
             $SourceListFields = Get-PnPField -List $ListName -Connection $SourceConn | Where { (-Not ($_.ReadOnlyField)) -and (-Not ($_.Hidden)) -and ($_.InternalName -ne  "ContentType") -and ($_.InternalName -ne  "Attachments") }
         
@@ -77,22 +86,21 @@ Function Copy-SPOListItems()
                         }
                     }
                 }
-                #Copy Created by, Modified by, Created, Modified Metadata values
-                $ItemValue.add("Created", $SourceItem["Created"]);
-                $ItemValue.add("Modified", $SourceItem["Modified"]);
-                $ItemValue.add("Author", $SourceItem["Author"].Email);
-                $ItemValue.add("Editor", $SourceItem["Editor"].Email);
  
                 Write-Progress -Activity "Copying List Items:" -Status "Copying Item ID '$($SourceItem.Id)' from Source List ($($Counter) of $($SourceListItemsCount))" -PercentComplete (($Counter / $SourceListItemsCount) * 100)
                 
                 
                 Add-PnPListItem -List $ListName -Values $ItemValue -Connection $DestinationConn -Batch $Batch 
+                 #Foreach($SourceField in $SourceListFields)
+                 #{
+                 #if($SourceField.InternalName -eq "LinkTitle"){
+                     #     $FieldName = $SourceField.Title
+                      #    $FieldInternalName = "Title"
+                      #    Set-PnPField -List $ListName -Identity $FieldInternalName -Values  @{Title=$FieldName} -Connection $DestinationConn -ErrorAction Stop
+                       #   Write-host -f Green "Title and Description Updated for Field '$FieldName'"
+                  #} 
+                  #}
                 Write-Host $Counter
-                 
-                
-                #Copy Attachments
-                
-
                 Write-Host "Copied Item ID from Source to Destination List:$($SourceItem.Id) ($($Counter) of $($SourceListItemsCount))"
                 $Counter++
             }
@@ -103,19 +111,13 @@ Function Copy-SPOListItems()
      
    
    
-   }
+   
   }
+   }
    }
     Catch {
         Write-host -f Red "Error:" $_.Exception.Message
     }
-}
-
-
-#Set Parameters
-$SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
-
-$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/EEESite"
-   
+} 
 #Call the Function to Copy List Items between Lists
 Copy-SPOListItems -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL

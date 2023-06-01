@@ -1,7 +1,7 @@
 ﻿Clear-Host
 #Parameters
-$SourceSiteURL = "https://t6syv.sharepoint.com/sites/MOH4"
-$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/CsiteNew"
+$SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
+$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/NewCopyList"
 
 $AdminCenterURL = "https://t6syv-admin.sharepoint.com/"
 $SiteTitle = "New225"
@@ -65,22 +65,27 @@ Function Copy-SPOListItems()
         $SourceLists = Get-PnPList -Connection $SourceConn | Where { $_.BaseType -eq "GenericList" -and $_.Hidden -eq $False }
         $DestinationConn = Connect-PnPOnline -Url $DestinationSiteURL -Interactive -ReturnConnection
         $DestinationLists = Get-PnPList -Connection $DestinationConn
+        
             ForEach ($SourceList in $SourceLists) {
             $ListName = $SourceList.Title 
-            #Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
+            if($ListName -eq "العواصم"){
+            $TemplateFile = "$PSScriptRoot\Temp\Template$ListName.xml"
+            Get-PnPSiteTemplate -Out $TemplateFile -ListsToExtract $ListName -Handlers Lists -Connection $SourceConn
+          
+            If (($DestinationLists.Title -contains $SourceList.Title)) {
+                Remove-PnPList -Identity $ListName -Force -Connection $DestinationConn
+                Write-host "Previous List '$($ListName)'removed successfully!" -f Green
+            }       
+ 
+            #Apply the Template
+            Invoke-PnPSiteTemplate -Path $TemplateFile -Connection $DestinationConn
+            Write-Host $TemplateFile
+            
             $SourceListItems = Get-PnPListItem -List $ListName -Connection $SourceConn
             $Batch = New-PnPBatch -Connection $DestinationConn
             $SourceListItemsCount= $SourceListItems.count
             Write-host $ListName "Total Number of Items Found:"$SourceListItemsCount     
-            If (($DestinationLists.Title -contains $ListName)) {
-                #Copy column value from Source to Destination
-                    Remove-PnPList -Identity $ListName -Force -Connection $DestinationConn
-                    write-host "Removed"
-                    Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
-                    }
-                   else{
-                   Copy-PnPList -Identity $ListName -Connection $SourceConn -DestinationWebUrl $DestinationSiteURL
-                   }
+   
             #Get fields to Update from the Source List - Skip Read only, hidden fields, content type and attachments
             $SourceListFields = Get-PnPField -List $ListName -Connection $SourceConn | Where { (-Not ($_.ReadOnlyField)) -and (-Not ($_.Hidden)) -and ($_.InternalName -ne  "ContentType") -and ($_.InternalName -ne  "Attachments") }
         
@@ -126,22 +131,12 @@ Function Copy-SPOListItems()
                         }
                     }
                 }
-                #Copy Created by, Modified by, Created, Modified Metadata values
-                #$ItemValue.add("Created", $SourceItem["Created"]);
-                #$ItemValue.add("Modified", $SourceItem["Modified"]);
-                #$ItemValue.add("Author", $SourceItem["Author"].Email);
-                #$ItemValue.add("Editor", $SourceItem["Editor"].Email);
  
                 Write-Progress -Activity "Copying List Items:" -Status "Copying Item ID '$($SourceItem.Id)' from Source List ($($Counter) of $($SourceListItemsCount))" -PercentComplete (($Counter / $SourceListItemsCount) * 100)
                 
                 
                 Add-PnPListItem -List $ListName -Values $ItemValue -Connection $DestinationConn -Batch $Batch 
                 Write-Host $Counter
-                 
-                
-                #Copy Attachments
-                
-
                 Write-Host "Copied Item ID from Source to Destination List:$($SourceItem.Id) ($($Counter) of $($SourceListItemsCount))"
                 $Counter++
             }
@@ -154,6 +149,7 @@ Function Copy-SPOListItems()
    
    
   }
+   }
    }
     Catch {
         Write-host -f Red "Error:" $_.Exception.Message
@@ -260,5 +256,5 @@ Function Copy-PnPAllPages {
 #$job1 = Start-Job -ScriptBlock { CreateSite -AdminCenterURL $AdminCenterURL -DestinationSiteURL $DestinationSiteURL  -SiteTitle $SiteTitle -SiteOwner $SiteOwner -Template $Template -Timezone $Timezone  }
 #Wait-Job $job1
 Copy-SPOListItems -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
-Copy-PnPAllLibraries -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
-Copy-PnPAllPages -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
+#Copy-PnPAllLibraries -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
+#Copy-PnPAllPages -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
