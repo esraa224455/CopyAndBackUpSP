@@ -1,6 +1,9 @@
-﻿#Function to Download All Files from a SharePoint Online Folder - Recursively  
+﻿#Set Parameters
+$SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
+
+#Function to Download All Files from a SharePoint Online Folder - Recursively 
 Function Download-SPOFolder([Microsoft.SharePoint.Client.Folder]$Folder, $DestinationFolder)
-{   
+{  
     #Get the Folder's Site Relative URL
     $FolderURL = $Folder.ServerRelativeUrl.Substring($Folder.Context.Web.ServerRelativeUrl.Length)
     $LocalFolder = $DestinationFolder + ($FolderURL -replace "/","\")
@@ -24,26 +27,23 @@ Function Download-SPOFolder([Microsoft.SharePoint.Client.Folder]$Folder, $Destin
     {
         Download-SPOFolder $Folder $DestinationFolder
     }
-} 
+}  
+ 
+#Connect to PnP Online
+Connect-PnPOnline -Url $SourceSiteURL -Interactive
 
-$SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
-$SourceConn = Connect-PnPOnline -Url $SourceSiteURL -Interactive -ReturnConnection
 $ExcludedLibrary = @("Site Pages")
-    #Get all document libraries
+#Get all document libraries
 $SourceLibraries = Get-PnPList -Includes RootFolder -Connection $SourceConn | Where { $_.BaseType -eq "DocumentLibrary" -and $_.Hidden -eq $False -and $_.Title -notin $ExcludedLibrary}
     Foreach($SourceLibrary in $SourceLibraries){
-        Write-Host $SourceLibrary.RootFolder.ServerRelativeUrl
-        $LibraryName = $SourceLibrary.RootFolder.ServerRelativeUrl
+       
+        $LibraryUrl = $SourceLibrary.RootFolder.ServerRelativeUrl
+        Write-Host $LibraryUrl
+        $LibraryName = Split-Path -Path $LibraryUrl -Leaf
         Write-Host $LibraryName
-        <#if($LibraryName -eq "Documents"){
-        $LibraryURL = "/Shared $LibraryName"
-        }
-        else{
-        $LibraryURL = "/$LibraryName" #Site Relative URL
-        }#>
-        $DownloadPath ="C:\Temp\"
+        $DownloadPath ="$PSScriptRoot\Docs\"
         $Folder = Get-PnPFolder -Url $LibraryName
 
     #Call the function to download the document library
     Download-SPOFolder $Folder $DownloadPath
-    }
+   }
