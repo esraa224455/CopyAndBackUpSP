@@ -23,7 +23,17 @@ foreach ($List in $SelectedLists){
 #Get the List
 $ListName= $List.Title
 write-host $ListName
-$ExportFile ="c:\Temp\List$ListName.csv"
+# Create Folder path to save CSV file
+$LocalFolder = "$PSScriptRoot\CsvFiles"
+#Create Local Folder, if it doesn't exist
+If (!(Test-Path -Path $LocalFolder)) {
+            New-Item -ItemType Directory -Path $LocalFolder | Out-Null
+    Write-host -f Yellow "Ensured Folder '$LocalFolder'"
+}
+
+
+# path to save CSV file
+$ExportFile ="$LocalFolder\$ListName.csv"
 
 #Get All List Items
 $Query = New-Object Microsoft.SharePoint.Client.CamlQuery
@@ -46,13 +56,11 @@ $Counter = 0
     }
     $Counter++ 
     write-host $Counter
-    write-host $ExportItem
     #Add the object with the above properties to the Array
     $ListItemCollection += $ExportItem
  }
- write-host $ListItemCollection
 #Export the result Array to CSV file
 $ListItemCollection | Export-CSV $ExportFile -NoTypeInformation -Encoding UTF8
  
-Write-host "List data Exported to CSV file successfully!"
+Write-host "$ListName data Exported to CSV file successfully!"
 }

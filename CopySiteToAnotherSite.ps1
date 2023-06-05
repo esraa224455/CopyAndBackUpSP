@@ -8,6 +8,9 @@ $SiteTitle = "New225"
 $SiteOwner = "DiegoS@t6syv.onmicrosoft.com"
 $Template = "SITEPAGEPUBLISHING#0" #Modern SharePoint Team Site
 $Timezone = 4
+
+$LocalFolder= "$PSScriptRoot\Temp"
+
 Function CreateSite {
     param (
         [parameter(Mandatory = $true, ValueFromPipeline = $true)][string]$AdminCenterURL,
@@ -68,8 +71,8 @@ Function Copy-SPOListItems()
         
             ForEach ($SourceList in $SourceLists) {
             $ListName = $SourceList.Title 
-            if($ListName -eq "العواصم"){
-            $TemplateFile = "$PSScriptRoot\Temp\Template$ListName.xml"
+            
+            $TemplateFile = "$LocalFolder\Template$ListName.xml"
             Get-PnPSiteTemplate -Out $TemplateFile -ListsToExtract $ListName -Handlers Lists -Connection $SourceConn
           
             If (($DestinationLists.Title -contains $SourceList.Title)) {
@@ -144,12 +147,7 @@ Function Copy-SPOListItems()
 
             Invoke-PnPBatch -Batch $Batch -Connection $DestinationConn
             Write-Host $ListName "Copied" -f Magenta
-     
-   
-   
-   
-  }
-   }
+            }
    }
     Catch {
         Write-host -f Red "Error:" $_.Exception.Message
@@ -256,5 +254,5 @@ Function Copy-PnPAllPages {
 #$job1 = Start-Job -ScriptBlock { CreateSite -AdminCenterURL $AdminCenterURL -DestinationSiteURL $DestinationSiteURL  -SiteTitle $SiteTitle -SiteOwner $SiteOwner -Template $Template -Timezone $Timezone  }
 #Wait-Job $job1
 Copy-SPOListItems -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
-#Copy-PnPAllLibraries -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
-#Copy-PnPAllPages -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
+Copy-PnPAllLibraries -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL
+Copy-PnPAllPages -SourceSiteURL $SourceSiteURL -DestinationSiteURL $DestinationSiteURL

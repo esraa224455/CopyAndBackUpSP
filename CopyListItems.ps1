@@ -3,6 +3,8 @@
 $SourceSiteURL = "https://t6syv.sharepoint.com/sites/EsraaTeamSite"
 
 $DestinationSiteURL = "https://t6syv.sharepoint.com/sites/NewCopyList"
+
+$LocalFolder = "$PSScriptRoot\Temp"
 #Function to copy list items from one list to another
 
 Function Copy-SPOListItems()
@@ -15,7 +17,7 @@ Function Copy-SPOListItems()
     Try {
         
         #Get All Items from the Source List in batches
-        Write-Progress -Activity "Reading Source..." -Status "Getting Items from Source List. Please wait..."
+       
         $SourceConn = Connect-PnPOnline -Url $SourceSiteURL -Interactive -ReturnConnection
         $SourceLists = Get-PnPList -Connection $SourceConn | Where { $_.BaseType -eq "GenericList" -and $_.Hidden -eq $False }
         $DestinationConn = Connect-PnPOnline -Url $DestinationSiteURL -Interactive -ReturnConnection
@@ -23,7 +25,7 @@ Function Copy-SPOListItems()
         
             ForEach ($SourceList in $SourceLists) {
             $ListName = $SourceList.Title 
-            if($ListName -eq "العواصم"){
+            
             $TemplateFile = "$PSScriptRoot\Temp\Template$ListName.xml"
             Get-PnPSiteTemplate -Out $TemplateFile -ListsToExtract $ListName -Handlers Lists -Connection $SourceConn
           
@@ -35,7 +37,7 @@ Function Copy-SPOListItems()
             #Apply the Template
             Invoke-PnPSiteTemplate -Path $TemplateFile -Connection $DestinationConn
             Write-Host $TemplateFile
-            
+            Write-Progress -Activity "Reading Source..." -Status "Getting Items from Source List. Please wait..."
             $SourceListItems = Get-PnPListItem -List $ListName -Connection $SourceConn
             $Batch = New-PnPBatch -Connection $DestinationConn
             $SourceListItemsCount= $SourceListItems.count
@@ -112,7 +114,7 @@ Function Copy-SPOListItems()
    
    
    
-  }
+  
    }
    }
     Catch {
