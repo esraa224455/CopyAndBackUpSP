@@ -27,7 +27,7 @@ If($Library.ItemCount -eq 0){
 else{
 #Get all Items from the Library - with progress bar
 $global:counter = 0
-$LibraryItems = Get-PnPListItem -List $LibraryName -PageSize 500 -Fields ID -ScriptBlock { Param($items) $global:counter += $items.Count; Write-Progress -PercentComplete `
+$LibraryItems = Get-PnPListItem -List $LibraryName -Connection $SourceConn -PageSize 500 -Fields ID -ScriptBlock { Param($items) $global:counter += $items.Count; Write-Progress -PercentComplete `
             ($global:Counter / ($Library.ItemCount) * 100) -Activity "Getting Items from Library:" -Status "Processing Items $global:Counter to $($Library.ItemCount)";} 
 Write-Progress -Activity "Completed Retrieving Folders from Library $LibraryName" -Completed
 
@@ -49,7 +49,7 @@ $FilesColl =  $LibraryItems | Where {$_.FileSystemObjectType -eq "File"}
 #Iterate through each file and download
 $FilesColl | ForEach-Object {
     $FileDownloadPath = ($DownloadPath + ($_.FieldValues.FileRef.Substring($Web.ServerRelativeUrl.Length)) -replace "/","\").Replace($_.FieldValues.FileLeafRef,'')
-    Get-PnPFile -ServerRelativeUrl $_.FieldValues.FileRef -Path $FileDownloadPath -FileName $_.FieldValues.FileLeafRef -AsFile -force 
+    Get-PnPFile -ServerRelativeUrl $_.FieldValues.FileRef -Path $FileDownloadPath -FileName $_.FieldValues.FileLeafRef -Connection $SourceConn -AsFile -force 
     Write-host -f Green "Downloaded File from '$($_.FieldValues.FileRef)'"
     }
 }

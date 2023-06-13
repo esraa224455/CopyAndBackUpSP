@@ -1,5 +1,6 @@
-﻿#Config Variables
-$SiteURL = "https://t6syv.sharepoint.com/sites/ImportFromDevice"
+﻿Clear-Host
+#Config Variables
+$SiteURL = "https://t6syv.sharepoint.com/sites/AnotherTest"
 $FolderPath = "$PSScriptRoot\CsvFiles\"
 $Batch = New-PnPBatch
 
@@ -47,15 +48,18 @@ Try {
         #Map each field from CSV to target list
         Foreach($CSVField in $CSVFields)
         {
-            $MappedField = $ListFields | Where {$_.Title -eq $CSVField}
+           
+            $MappedField = $ListFields | Where {$_.InternalName -eq $CSVField}
+            
             If($MappedField -ne $Null)
             {
-                $FieldName = $MappedField.Title
+                $FieldName = $MappedField.InternalName
                 #Check if the Field value is not Null
                 If($Row.$CSVField -ne $Null)
                 {
                     #Handle Special Fields
                     $FieldType  = $MappedField.TypeAsString 
+                    
                     If($FieldType -eq "User" -or $FieldType -eq "UserMulti") #People Picker Field
                     {
                         $PeoplePickerValues = $Row.$FieldName.Split(",")
@@ -75,15 +79,16 @@ Try {
                         #Get Source Field Value and add to Hashtable
                         $ItemValue.Add($MappedField.InternalName,$Row.$CSVField)
                         Write-host $Row.$CSVField
-                        Write-host $FieldName
-                    }
+                        }
                 }
-            }}
+            }
+            
+            }
         
         Write-host "Adding List item with values: $ListName"
         $ItemValue | Format-Table
         Write-host $ItemValue.Values
-        Write-host $ListField.Title
+        
          
         #Add New List Item
         Add-PnPListItem -List $ListName -Values $ItemValue -Batch $Batch | Out-Null 
@@ -93,4 +98,6 @@ Try {
 Catch {
     write-host "Error: $($_.Exception.Message)"  -foregroundcolor Red
 }
+
+
 }

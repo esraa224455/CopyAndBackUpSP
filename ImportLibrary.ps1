@@ -2,7 +2,7 @@
 #Variables
 $SourceSiteName ="EsraaTeamSite"
 $SiteURL = "https://t6syv.sharepoint.com/sites/ImportFromDevice"
-$FolderPath = "$PSScriptRoot\$SiteName"
+$FolderPath = "$PSScriptRoot\$SourceSiteName"
 
 #Function to upload all files from a local folder to SharePoint Online Folder
 Function Upload-PnPFolder($LocalFolderPath, $TargetFolderURL)

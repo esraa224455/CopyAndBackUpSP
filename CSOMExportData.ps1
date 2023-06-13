@@ -23,6 +23,7 @@ foreach ($List in $SelectedLists){
 #Get the List
 $ListName= $List.Title
 write-host $ListName
+
 # Create Folder path to save CSV file
 $LocalFolder = "$PSScriptRoot\CsvFiles"
 #Create Local Folder, if it doesn't exist
@@ -49,10 +50,36 @@ $Counter = 0
 #Fetch each list item value to export to excel
  foreach($ListItem in $ListItems){
     $ExportItem = New-Object PSObject
-    $fieldsToExport = $fields | Where-Object { (-Not $_.ReadOnlyField) -and (-Not $_.Hidden) -and ($_.InternalName -ne "ContentType") } 
+    $fieldsToExport = $fields | Where-Object {(-Not $_.Hidden) -and ($_.InternalName -ne "ContentType") } 
     foreach($Field in $fieldsToExport) {
-     
-    $ExportItem | Add-Member -MemberType NoteProperty -name $Field.Title -Value $ListItem[$Field.InternalName]
+    
+            if($NULL -ne $ListItem[$Field.InternalName])
+            {
+                #Expand the value of Person or Lookup fields
+                $FieldType = $ListItem[$Field.InternalName].GetType().name
+                if (($FieldType -eq "FieldLookupValue") -or ($FieldType -eq "FieldUserValue"))
+                {
+                    $FieldValue = $ListItem[$Field.InternalName].LookupValue
+                }
+                elseif(($FieldType -eq "FieldUrlValue")){
+                    $FieldValue = $ListItem[$Field.InternalName].Url
+                }
+                
+                else
+                {
+                    $FieldValue = $ListItem[$Field.InternalName]  
+                }
+            }
+            else{
+                $FieldType = $field.GetType().Name
+                 If($FieldType -eq "FieldUrl"){
+                    $FieldValue="https://"
+                        write-host $FieldValue "/" $Field.Title
+                    }else{
+                    $FieldValue=""
+                     }
+            }
+            $ExportItem | Add-Member -MemberType NoteProperty -name $Field.InternalName -value $FieldValue
     }
     $Counter++ 
     write-host $Counter
@@ -63,4 +90,5 @@ $Counter = 0
 $ListItemCollection | Export-CSV $ExportFile -NoTypeInformation -Encoding UTF8
  
 Write-host "$ListName data Exported to CSV file successfully!"
+
 }

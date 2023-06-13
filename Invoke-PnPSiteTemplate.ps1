@@ -1,6 +1,6 @@
 ﻿Clear-Host
 #Set Parameters
-$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/TestCSVImport"
+$DestinationSiteURL = "https://t6syv.sharepoint.com/sites/AnotherTest"
 $FolderTempPath = "$PSScriptRoot\Temp"
 
 #Function to copy list items from one list to another
@@ -23,12 +23,14 @@ Function Copy-SPOListItems()
         #Get the folder name
         $ListName = $Folder.Name
         Write-Host $ListName
+
         
         # Template Path
         $TemplateFile = "$FolderTempPath\$ListName"  
             
         #Apply the Template
         Invoke-PnPSiteTemplate -Path $TemplateFile -Connection $DestinationConn
+
 }
    }
     Catch {
